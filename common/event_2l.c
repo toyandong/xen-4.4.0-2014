@@ -28,16 +28,16 @@ static void evtchn_2l_set_pending(struct vcpu *v, struct evtchn *evtchn)
 
     if ( test_and_set_bit(port, &shared_info(d, evtchn_pending)) )
         return;
-
-    if ( !test_bit        (port, &shared_info(d, evtchn_mask)) &&
+	if(!test_bit (port, &shared_info(d, evtchn_mask)) && evtchn->vector > 0)
+	{
+        vcpu_mark_events_pending(v, evtchn->vector);
+    }
+    else if ( !test_bit        (port, &shared_info(d, evtchn_mask)) &&
          !test_and_set_bit(port / BITS_PER_EVTCHN_WORD(d),
                            &vcpu_info(v, evtchn_pending_sel)) )
     {
     	
         vcpu_mark_events_pending(v, evtchn->vector);
-    }else if(!test_bit(port, &shared_info(d, evtchn_mask)) &&  evtchn->vector >0)
-    {
-    	vcpu_mark_events_pending(v, evtchn->vector);
     }
 		
     evtchn_check_pollers(d, port);
@@ -59,13 +59,16 @@ static void evtchn_2l_unmask(struct domain *d, struct evtchn *evtchn)
      */
     if ( test_and_clear_bit(port, &shared_info(d, evtchn_mask)) &&
          test_bit          (port, &shared_info(d, evtchn_pending)) &&
+         evtchn->vector > 0 )
+    {
+       vcpu_mark_events_pending(v, evtchn->vector);
+	   
+    }else if ( test_and_clear_bit(port, &shared_info(d, evtchn_mask)) &&
+         test_bit          (port, &shared_info(d, evtchn_pending)) &&
          !test_and_set_bit (port / BITS_PER_EVTCHN_WORD(d),
                             &vcpu_info(v, evtchn_pending_sel)) )
     {
        vcpu_mark_events_pending(v, evtchn->vector);
-    }else if(!test_bit(port, &shared_info(d, evtchn_mask)) &&  evtchn->vector >0)
-    {
-    	vcpu_mark_events_pending(v, evtchn->vector);
     }
 		
 }
