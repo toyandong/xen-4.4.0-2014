@@ -2058,11 +2058,15 @@ void vcpu_kick(struct vcpu *v)
 
 void vcpu_mark_events_pending(struct vcpu *v, int vector)
 {
-    int already_pending = test_and_set_bit(
+    int already_pending ;
+	if(vector <= 0 )
+	{
+		already_pending= test_and_set_bit(
         0, (unsigned long *)&vcpu_info(v, evtchn_upcall_pending));
 
-    if ( already_pending  && vector <=0)
-        return;
+	    if ( already_pending )
+	        return;
+	}
 
     if ( has_hvm_container_vcpu(v) )
         hvm_assert_evtchn_irq(v, vector);
