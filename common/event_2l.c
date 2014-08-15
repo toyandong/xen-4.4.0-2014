@@ -33,9 +33,13 @@ static void evtchn_2l_set_pending(struct vcpu *v, struct evtchn *evtchn)
          !test_and_set_bit(port / BITS_PER_EVTCHN_WORD(d),
                            &vcpu_info(v, evtchn_pending_sel)) )
     {
-        vcpu_mark_events_pending(v);
+    	
+        vcpu_mark_events_pending(v, evtchn->vector);
+    }else if(!test_bit(port, &shared_info(d, evtchn_mask)) &&  evtchn->vector >0)
+    {
+    	vcpu_mark_events_pending(v, evtchn->vector);
     }
-
+		
     evtchn_check_pollers(d, port);
 }
 
@@ -58,8 +62,12 @@ static void evtchn_2l_unmask(struct domain *d, struct evtchn *evtchn)
          !test_and_set_bit (port / BITS_PER_EVTCHN_WORD(d),
                             &vcpu_info(v, evtchn_pending_sel)) )
     {
-        vcpu_mark_events_pending(v);
+       vcpu_mark_events_pending(v, evtchn->vector);
+    }else if(!test_bit(port, &shared_info(d, evtchn_mask)) &&  evtchn->vector >0)
+    {
+    	vcpu_mark_events_pending(v, evtchn->vector);
     }
+		
 }
 
 static bool_t evtchn_2l_is_pending(struct domain *d,

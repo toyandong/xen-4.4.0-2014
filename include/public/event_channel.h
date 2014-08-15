@@ -74,6 +74,7 @@
 #define EVTCHNOP_init_control    11
 #define EVTCHNOP_expand_array    12
 #define EVTCHNOP_set_priority    13
+#define EVTCHNOP_bind_vector     14
 /* ` } */
 
 typedef uint32_t evtchn_port_t;
@@ -307,6 +308,20 @@ struct evtchn_set_priority {
     uint32_t priority;
 };
 typedef struct evtchn_set_priority evtchn_set_priority_t;
+
+ /*
+ * EVTCHNOP_bind_vector: bind a particular evtchn to a particular vector
+ * NOTES:
+ */
+struct evtchn_bind_vector {
+    /* IN parameters */
+    domid_t domid;
+	evtchn_port_t port;
+	int vector;
+	/*u16 vcpu_id;*/
+};
+typedef struct evtchn_bind_vector evtchn_bind_vector_t;
+
 
 /*
  * ` enum neg_errnoval

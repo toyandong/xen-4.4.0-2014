@@ -236,7 +236,7 @@ static void evtchn_fifo_set_pending(struct vcpu *v, struct evtchn *evtchn)
         if ( !linked
              && !test_and_set_bit(q->priority,
                                   &v->evtchn_fifo->control_block->ready) )
-            vcpu_mark_events_pending(v);
+           vcpu_mark_events_pending(v, evtchn->vector);
     }
  done:
     if ( !was_pending )

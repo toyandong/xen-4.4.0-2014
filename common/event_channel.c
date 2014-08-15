@@ -218,6 +218,7 @@ static long evtchn_alloc_unbound(evtchn_alloc_unbound_t *alloc)
         goto out;
 
     chn->state = ECS_UNBOUND;
+	chn->vector = -1;
     if ( (chn->u.unbound.remote_domid = alloc->remote_dom) == DOMID_SELF )
         chn->u.unbound.remote_domid = current->domain->domain_id;
     evtchn_port_init(d, chn);
@@ -987,12 +988,49 @@ static long evtchn_set_priority(const struct evtchn_set_priority *set_priority)
     return ret;
 }
 
+static long evtchn_bind_vector(const struct evtchn_bind_vector *bind_vector)
+{
+    struct domain *d = current->domain;
+    unsigned int port = bind_vector->port;
+	 struct evtchn *chn;
+    long ret;
+	
+	if(bind_vector->vector <= 0)
+	{
+		 return -EINVAL;
+	}
+
+    spin_lock(&d->event_lock);
+
+    if ( !port_is_valid(d, port) )
+    {
+        spin_unlock(&d->event_lock);
+		//alloc new evtchn and then bind?
+        return -EINVAL;
+    }
+	
+    chn = evtchn_from_port(d, port);
+	chn->state = ECS_INTERDOMAIN;
+	chn->vector = bind_vector->vector;
+	chn->notify_vcpu_id = current->vcpu_id;
+    spin_unlock(&d->event_lock);
+	ret = 0;
+    return ret;
+}
+
 long do_event_channel_op(int cmd, XEN_GUEST_HANDLE_PARAM(void) arg)
 {
     long rc;
 
     switch ( cmd )
     {
+    case EVTCHNOP_bind_vector: {
+        struct evtchn_bind_vector bind_vector;
+        if ( copy_from_guest(&bind_vector, arg, 1) != 0 )
+            return -EFAULT;
+        rc = evtchn_bind_vector(&bind_vector);
+        break;
+    }
     case EVTCHNOP_alloc_unbound: {
         struct evtchn_alloc_unbound alloc_unbound;
         if ( copy_from_guest(&alloc_unbound, arg, 1) != 0 )

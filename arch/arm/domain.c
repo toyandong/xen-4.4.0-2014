@@ -778,7 +778,7 @@ void arch_dump_vcpu_info(struct vcpu *v)
 {
 }
 
-void vcpu_mark_events_pending(struct vcpu *v)
+void vcpu_mark_events_pending(struct vcpu *v, int vector)
 {
     int already_pending = test_and_set_bit(
         0, (unsigned long *)&vcpu_info(v, evtchn_upcall_pending));

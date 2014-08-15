@@ -200,6 +200,12 @@ static void hvm_set_callback_irq_level(struct vcpu *v)
     spin_unlock(&d->arch.hvm_domain.irq_lock);
 }
 
+static void hvm_trigger_vector_bypass_ioapic(struct vcpu *v, int vector)
+{	
+	struct vlapic *target =  vcpu_vlapic(v) ;
+	vlapic_set_irq(target, vector, 0); 	/* 0: edge, 1: level */
+}
+
 void hvm_maybe_deassert_evtchn_irq(void)
 {
     struct domain *d = current->domain;
@@ -210,7 +216,7 @@ void hvm_maybe_deassert_evtchn_irq(void)
         hvm_set_callback_irq_level(d->vcpu[0]);
 }
 
-void hvm_assert_evtchn_irq(struct vcpu *v)
+void hvm_assert_evtchn_irq(struct vcpu *v, int vector)
 {
     if ( unlikely(in_irq() || !local_irq_is_enabled()) )
     {
@@ -220,8 +226,13 @@ void hvm_assert_evtchn_irq(struct vcpu *v)
 
     if ( is_hvm_pv_evtchn_vcpu(v) )
         vcpu_kick(v);
-    else if ( v->vcpu_id == 0 )
-        hvm_set_callback_irq_level(v);
+	else if ( vector > 0 )
+	{
+		hvm_trigger_vector_bypass_ioapic(v, vector);
+	}
+	else if ( v->vcpu_id == 0 )
+		hvm_set_callback_irq_level(v);
+
 }
 
 void hvm_set_pci_link_route(struct domain *d, u8 link, u8 isa_irq)

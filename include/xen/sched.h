@@ -80,6 +80,7 @@ struct evtchn
     u8  state;             /* ECS_* */
     u8  xen_consumer;      /* Consumer in Xen, if any? (0 = send to guest) */
     u16 notify_vcpu_id;    /* VCPU for local delivery notification */
+	int vector;			   /* if >0, bypass ioapic layer, if =0, need ioapic */
     u32 port;
     union {
         struct {
